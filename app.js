@@ -4,16 +4,16 @@ const PAGE_SIZE = 60;
 const number = value => `#${String(value).padStart(3, '0')}`;
 let privateAccess = null;
 const decryptedImages = new Map();
-async function decryptFile(url) {
+async function decryptFile(url, cryptoKey = privateAccess.cryptoKey) {
   const response = await fetch(url);
   if (!response.ok) throw new Error('密钥链接不可用或图库尚未发布。');
   const data = new Uint8Array(await response.arrayBuffer());
-  return crypto.subtle.decrypt({name: 'AES-GCM', iv: data.slice(0, 12)}, privateAccess.cryptoKey, data.slice(12));
+  return crypto.subtle.decrypt({name: 'AES-GCM', iv: data.slice(0, 12)}, cryptoKey, data.slice(12));
 }
 async function imageURL(image) {
   if (!image.encrypted) return image.url.replace('/image?', '/thumbnail?');
   if (!decryptedImages.has(image.url)) {
-    const result = decryptFile(image.url).then(data => URL.createObjectURL(new Blob([data], {type: 'image/webp'})));
+    const result = decryptFile(image.url, image.cryptoKey || privateAccess.cryptoKey).then(data => URL.createObjectURL(new Blob([data], {type: 'image/webp'})));
     decryptedImages.set(image.url, result);
     result.catch(() => decryptedImages.delete(image.url));
   }
@@ -27,7 +27,18 @@ async function unlockGallery(collection, selected) {
     const raw = Uint8Array.from(atob(key.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - key.length % 4) % 4)), c => c.charCodeAt(0));
     const cryptoKey = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
     privateAccess = {key, vault, cryptoKey};
-    const folders = JSON.parse(new TextDecoder().decode(await decryptFile(`data/${vault}.bin`)));
+    const payload = JSON.parse(new TextDecoder().decode(await decryptFile(`data/${vault}.bin`)));
+    let folders = payload;
+    if (payload.groups) {
+      folders = [];
+      for (const group of payload.groups) {
+        const bytes = Uint8Array.from(atob(group.key.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - group.key.length % 4) % 4)), c => c.charCodeAt(0));
+        const groupKey = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['decrypt']);
+        const groupFolders = JSON.parse(new TextDecoder().decode(await decryptFile(`data/${group.vault}.bin`, groupKey)));
+        for (const folder of groupFolders) for (const image of folder.images) image.cryptoKey = groupKey;
+        folders.push(...groupFolders);
+      }
+    }
     collection.folders = folders;
     collection.locked = false;
   } catch (error) {
