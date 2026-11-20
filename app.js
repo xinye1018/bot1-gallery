@@ -93,6 +93,7 @@ function renderFolders() {
   const query = $('folderSearch').value.toLocaleLowerCase();
   $('folders').replaceChildren(...folders.filter(f => folderLabel(f).toLocaleLowerCase().includes(query)).map(folder => {
     const item = button(`▱  ${folderLabel(folder)}`, () => selectFolder(folder.path), state.folder === folder.path);
+    item.dataset.folderPath = folder.path;
     const count = document.createElement('span');
     count.textContent = folder.count;
     item.append(count);
@@ -105,6 +106,7 @@ function selectCollection(collection, preferred) {
   $('folderSearch').value = '';
   renderCollections();
   const folder = collection.folders.find(f => f.path === preferred) || collection.folders.find(f => f.count > 0) || collection.folders[0];
+  renderFolders();
   selectFolder(folder?.path || '');
 }
 async function selectFolder(path) {
@@ -113,7 +115,9 @@ async function selectFolder(path) {
   state.images = [];
   state.page = 0;
   $('search').value = '';
-  renderFolders();
+  for (const item of $('folders').children) {
+    item.classList.toggle('selected', item.dataset.folderPath === path);
+  }
   const id = state.collection.id;
   $('title').textContent = currentFolderLabel();
   $('breadcrumb').textContent = `图片档案 / ${id.toUpperCase()} / ${currentFolderLabel()}`;
