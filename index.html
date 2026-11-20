@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>图片档案 · Gallery</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<aside>
+  <a class="brand" href="./">▧ <span>图片档案<small>LOCAL IMAGE GALLERY</small></span></a>
+  <p class="eyebrow">图片库 / COLLECTIONS</p>
+  <nav id="collections" aria-label="图片库"></nav>
+  <div class="folder-heading"><span>文件夹</span><span id="folderCount"></span></div>
+  <input id="folderSearch" type="search" placeholder="搜索文件夹…" aria-label="搜索文件夹">
+  <nav id="folders" aria-label="文件夹"></nav>
+  <footer><i></i> 静态图片库 <span>只读浏览</span></footer>
+</aside>
+<main>
+  <header><span id="breadcrumb">图片档案</span><button id="refresh">↻ 刷新图库</button></header>
+  <section class="intro"><p class="eyebrow">YOUR VISUAL ARCHIVE</p><h1 id="title">图片档案</h1><p id="description">选择一个文件夹，开始浏览。</p></section>
+  <section class="toolbar" aria-label="图片筛选"><div><span class="active-label">文件夹图片</span><span id="total" class="pill">0</span></div><div class="controls"><input id="search" type="search" placeholder="搜索文件名或 #编号" aria-label="搜索图片"><select id="sort" aria-label="排序"><option value="asc">编号：从小到大</option><option value="desc">编号：从大到小</option></select></div></section>
+  <div id="status" role="status"></div><section id="grid" aria-label="图片列表"></section>
+  <div class="pagination"><span id="range"></span><div><button id="prev">← 上一页</button><span id="page"></span><button id="next">下一页 →</button></div></div>
+  <p class="note">按文件名自然排序编号 · 每个文件夹从 #001 开始 · 原文件保持不变</p>
+</main>
+<dialog id="preview"><div class="preview-top"><span id="previewTitle"></span><button id="closePreview" aria-label="关闭预览">✕</button></div><div class="preview-body"><button id="prevImage" aria-label="上一张">←</button><img id="largeImage" alt=""><button id="nextImage" aria-label="下一张">→</button></div><div class="preview-bottom"><span id="previewIndex"></span><a id="original" target="_blank" rel="noopener">打开展示图 ↗</a></div></dialog>
+<script>window.GALLERY_STATIC = true;</script><script src="app.js"></script>
+</body></html>
