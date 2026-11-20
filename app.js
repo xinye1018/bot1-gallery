@@ -39,6 +39,7 @@ async function unlockGallery(collection, selected) {
         folders.push(...groupFolders);
       }
     }
+    if (!Array.isArray(folders)) throw new Error('Invalid gallery index');
     collection.folders = folders;
     collection.locked = false;
   } catch (error) {
@@ -215,6 +216,12 @@ async function load() {
   finally { $('refresh').disabled = false; }
 }
 $('refresh').onclick = load;
+window.addEventListener('hashchange', () => {
+  privateAccess = null;
+  decryptedImages.forEach(result => result.then(url => URL.revokeObjectURL(url)).catch(() => {}));
+  decryptedImages.clear();
+  load();
+});
 $('search').oninput = filterImages;
 $('sort').onchange = filterImages;
 $('folderSearch').oninput = renderFolders;
