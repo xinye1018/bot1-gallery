@@ -2,6 +2,14 @@ const $ = id => document.getElementById(id);
 const state = {collections: [], collection: null, folder: '', images: [], filtered: [], page: 0, preview: 0, request: 0};
 const PAGE_SIZE = 60;
 const number = value => `#${String(value).padStart(3, '0')}`;
+function folderLabel(folder) {
+  if (folder?.name) return folder.name;
+  const path = folder?.path || '';
+  return path.split('/').filter(Boolean).pop() || '根目录';
+}
+function currentFolderLabel() {
+  return folderLabel(state.collection?.folders.find(folder => folder.path === state.folder));
+}
 async function getJSON(url) {
   if (window.GALLERY_STATIC) {
     if (url === '/api/collections') url = 'data/collections.json';
@@ -34,15 +42,15 @@ function renderCollections() {
   }));
 }
 function renderFolders() {
-  const folders = state.collection?.folders || [];
+  const folders = (state.collection?.folders || []).filter(folder => folder.count > 0);
   $('folderCount').textContent = folders.length;
   const query = $('folderSearch').value.toLocaleLowerCase();
-  $('folders').replaceChildren(...folders.filter(f => (f.path || '根目录').toLocaleLowerCase().includes(query)).map(folder => {
-    const item = button(`▱  ${folder.path || '根目录'}`, () => selectFolder(folder.path), state.folder === folder.path);
+  $('folders').replaceChildren(...folders.filter(f => folderLabel(f).toLocaleLowerCase().includes(query)).map(folder => {
+    const item = button(`▱  ${folderLabel(folder)}`, () => selectFolder(folder.path), state.folder === folder.path);
     const count = document.createElement('span');
     count.textContent = folder.count;
     item.append(count);
-    item.title = folder.path || '根目录';
+    item.title = folderLabel(folder);
     return item;
   }));
 }
@@ -61,9 +69,9 @@ async function selectFolder(path) {
   $('search').value = '';
   renderFolders();
   const id = state.collection.id;
-  $('title').textContent = path ? path.split('/').pop() : `${id.toUpperCase()} · 根目录`;
-  $('breadcrumb').textContent = `图片档案 / ${id.toUpperCase()}${path ? ' / ' + path.replaceAll('/', ' / ') : ''}`;
-  $('description').textContent = '仅显示当前文件夹中的图片，子文件夹可在左侧单独选择。';
+  $('title').textContent = currentFolderLabel();
+  $('breadcrumb').textContent = `图片档案 / ${id.toUpperCase()} / ${currentFolderLabel()}`;
+  $('description').textContent = '仅显示当前文件夹中的图片，可在左侧切换文件夹。';
   history.replaceState(null, '', `#${new URLSearchParams({collection: id, folder: path})}`);
   filterImages();
   $('status').textContent = '正在读取图片…';
@@ -132,7 +140,7 @@ function openPreview(index) {
   $('largeImage').src = image.url;
   $('largeImage').alt = image.name;
   $('original').href = image.url;
-  $('previewIndex').textContent = `${state.collection.id.toUpperCase()} / ${state.folder || '根目录'} · ${index + 1} / ${state.filtered.length}`;
+  $('previewIndex').textContent = `${state.collection.id.toUpperCase()} / ${currentFolderLabel()} · ${index + 1} / ${state.filtered.length}`;
   $('prevImage').disabled = index === 0;
   $('nextImage').disabled = index === state.filtered.length - 1;
   if (!$('preview').open) $('preview').showModal();
